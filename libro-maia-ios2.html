@@ -1,0 +1,499 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>Géneros Teatrales · Maia</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,600;1,300;1,600&family=EB+Garamond:ital@0;1&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+:root {
+  --gold: #c9922a;
+  --gold-light: #e8b94a;
+  --cream: #fdf6e3;
+  --ink: #1c0f05;
+  --burgundy: #6b1a2a;
+  --page-line: rgba(107,26,42,0.15);
+}
+
+html, body {
+  width: 100%; height: 100%;
+  overflow: hidden;
+  background: radial-gradient(ellipse at 50% 30%, #1a0f04 0%, #050301 100%);
+  font-family: 'EB Garamond', serif;
+}
+
+/* Dust */
+.dust { position: fixed; inset: 0; pointer-events: none; overflow: hidden; }
+.dust span {
+  position: absolute;
+  width: 2px; height: 2px;
+  border-radius: 50%;
+  background: rgba(201,146,42,0.55);
+  animation: rise var(--d) var(--dl) linear infinite;
+}
+@keyframes rise {
+  0%   { transform: translateY(100vh); opacity: 0; }
+  10%  { opacity: 1; }
+  100% { transform: translateY(-20px) translateX(var(--x, 0px)); opacity: 0; }
+}
+
+/* App layout */
+.app {
+  width: 100vw; height: 100vh;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  padding: 16px;
+  gap: 0;
+}
+
+/* Book shell */
+.book-shell {
+  width: min(340px, 88vw);
+  height: min(490px, 62vh);
+  position: relative;
+  border-radius: 4px 10px 10px 4px;
+  box-shadow:
+    -8px 0 0 #0d0500,
+    -10px 4px 30px rgba(0,0,0,0.9),
+    4px 4px 40px rgba(0,0,0,0.7);
+  flex-shrink: 0;
+}
+
+/* Spine */
+.spine {
+  position: absolute;
+  left: -8px; top: 0; bottom: 0;
+  width: 8px;
+  background: linear-gradient(180deg, #2a1000, #0d0500, #1a0800);
+  border-radius: 4px 0 0 4px;
+  display: flex; align-items: center; justify-content: center;
+}
+.spine-text {
+  writing-mode: vertical-rl;
+  transform: rotate(180deg);
+  color: rgba(201,146,42,0.5);
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 0.55rem;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+}
+
+/* Pages stack effect */
+.book-shell::after {
+  content: '';
+  position: absolute;
+  right: -3px; top: 3px; bottom: 3px;
+  width: 6px;
+  background: linear-gradient(to right, #e0d4bb, #f5ead0);
+  border-radius: 0 3px 3px 0;
+  z-index: 0;
+}
+
+/* Slides container */
+.slides {
+  position: absolute;
+  inset: 0;
+  border-radius: 4px 10px 10px 4px;
+  overflow: hidden;
+  z-index: 1;
+}
+
+/* Each slide */
+.slide {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  transform: translateX(100%);
+  transition: opacity 0.5s ease, transform 0.5s ease;
+  will-change: transform, opacity;
+}
+.slide.active {
+  opacity: 1;
+  transform: translateX(0);
+  z-index: 2;
+}
+.slide.prev {
+  opacity: 0;
+  transform: translateX(-60%);
+  z-index: 1;
+}
+
+/* Cover slide */
+.slide-cover {
+  background: linear-gradient(145deg, #2d1200 0%, #1a0800 55%, #0d0500 100%);
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  padding: 28px 24px;
+  position: relative;
+  overflow: hidden;
+}
+.slide-cover::before {
+  content: '';
+  position: absolute; inset: 0;
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='4' height='4'%3E%3Cpath d='M0 0L4 4M4 0L0 4' stroke='rgba(0,0,0,0.07)' stroke-width='0.5'/%3E%3C/svg%3E");
+}
+
+.c-frame {
+  position: absolute; inset: 14px;
+  border: 1px solid rgba(201,146,42,0.3);
+  border-radius: 3px;
+  pointer-events: none;
+}
+.c-frame::before {
+  content: '';
+  position: absolute; inset: 5px;
+  border: 1px solid rgba(201,146,42,0.12);
+}
+.corner { position: absolute; width: 18px; height: 18px; border-color: var(--gold); border-style: solid; opacity: 0.55; }
+.tl { top: 18px; left: 18px; border-width: 2px 0 0 2px; }
+.tr { top: 18px; right: 18px; border-width: 2px 2px 0 0; }
+.bl { bottom: 18px; left: 18px; border-width: 0 0 2px 2px; }
+.br { bottom: 18px; right: 18px; border-width: 0 2px 2px 0; }
+
+.c-emblem { font-size: 2.6rem; margin-bottom: 16px; position: relative; z-index: 1; filter: drop-shadow(0 0 10px rgba(201,146,42,0.4)); }
+.c-title {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 1.6rem; font-weight: 600;
+  color: var(--gold-light);
+  text-align: center; line-height: 1.2;
+  text-shadow: 0 2px 10px rgba(0,0,0,0.8);
+  margin-bottom: 8px;
+  position: relative; z-index: 1;
+}
+.c-div {
+  width: 60px; height: 1px;
+  background: linear-gradient(to right, transparent, var(--gold), transparent);
+  margin: 10px 0; opacity: 0.5;
+  position: relative; z-index: 1;
+}
+.c-sub {
+  font-family: 'Cormorant Garamond', serif;
+  font-style: italic; font-size: 0.8rem;
+  color: rgba(201,146,42,0.55);
+  letter-spacing: 2.5px; text-transform: uppercase;
+  position: relative; z-index: 1;
+}
+.c-author {
+  position: absolute; bottom: 30px;
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 0.72rem; color: rgba(201,146,42,0.4);
+  letter-spacing: 1.5px; text-transform: uppercase;
+  z-index: 1;
+}
+.c-hint {
+  position: absolute; bottom: 50px;
+  font-family: 'Cormorant Garamond', serif;
+  font-style: italic; font-size: 0.68rem;
+  color: rgba(201,146,42,0.4);
+  z-index: 1;
+  animation: pulse 2s ease-in-out infinite;
+}
+@keyframes pulse { 0%,100%{opacity:0.3} 50%{opacity:0.8} }
+
+/* Content slides */
+.slide-page {
+  background: var(--cream);
+  padding: 22px 20px 40px 20px;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  height: 100%;
+}
+.slide-page::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; width: 100%; height: 100%;
+  background: linear-gradient(to right, rgba(160,130,90,0.12) 0%, transparent 8%);
+  pointer-events: none;
+}
+
+.page-header {
+  display: flex; align-items: flex-start; gap: 10px;
+  margin-bottom: 14px; padding-bottom: 12px;
+  border-bottom: 1px solid var(--page-line);
+}
+.page-icon { font-size: 1.5rem; flex-shrink: 0; margin-top: 2px; }
+.page-title {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 1.25rem; font-weight: 600;
+  color: var(--burgundy); line-height: 1.15;
+}
+.page-subtitle {
+  font-family: 'Cormorant Garamond', serif;
+  font-style: italic; font-size: 0.72rem;
+  color: rgba(107,26,42,0.55); margin-top: 3px;
+}
+
+.page-body { font-size: 0.8rem; color: #2c1810; line-height: 1.65; }
+.page-body p { margin-bottom: 8px; }
+.page-body strong { font-family: 'Cormorant Garamond', serif; font-weight: 600; color: var(--burgundy); }
+
+.section-label {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 0.62rem; letter-spacing: 2.5px;
+  text-transform: uppercase; color: rgba(201,146,42,0.7);
+  margin: 11px 0 5px;
+}
+
+.grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 5px; margin-top: 6px; }
+.card {
+  background: rgba(107,26,42,0.05);
+  border: 1px solid rgba(107,26,42,0.1);
+  border-radius: 3px; padding: 6px 8px;
+}
+.card-name { font-family: 'Cormorant Garamond', serif; font-weight: 600; font-size: 0.76rem; color: var(--burgundy); }
+.card-desc { font-size: 0.68rem; color: #5a3a2a; margin-top: 1px; line-height: 1.35; }
+
+.quote {
+  border-left: 2px solid var(--gold);
+  padding: 7px 10px; margin: 9px 0;
+  font-style: italic; font-size: 0.75rem;
+  color: #4a2e1a; background: rgba(201,146,42,0.04);
+}
+
+.tags { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 7px; }
+.tag {
+  background: rgba(107,26,42,0.07);
+  border: 1px solid rgba(107,26,42,0.13);
+  border-radius: 20px; padding: 2px 8px;
+  font-size: 0.65rem; color: var(--burgundy);
+  font-family: 'Cormorant Garamond', serif;
+}
+
+.pg-num {
+  position: absolute; bottom: 10px; right: 14px;
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 0.68rem; color: rgba(107,26,42,0.3);
+  font-style: italic;
+}
+
+/* Controls */
+.controls {
+  display: flex; align-items: center; justify-content: center;
+  gap: 16px; padding: 16px 0 8px;
+  width: 100%; flex-shrink: 0;
+}
+.btn {
+  background: transparent;
+  border: 1px solid rgba(201,146,42,0.35);
+  color: var(--gold);
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 0.85rem; letter-spacing: 1.5px;
+  text-transform: uppercase;
+  padding: 11px 24px; border-radius: 2px;
+  cursor: pointer; -webkit-appearance: none;
+  transition: background 0.2s;
+  min-width: 100px; text-align: center;
+}
+.btn:active { background: rgba(201,146,42,0.12); }
+.btn:disabled { opacity: 0.25; pointer-events: none; }
+
+.indicator {
+  font-family: 'Cormorant Garamond', serif;
+  font-style: italic; color: rgba(201,146,42,0.5);
+  font-size: 0.8rem; min-width: 80px; text-align: center;
+}
+
+/* Dots */
+.dots { display: flex; gap: 7px; justify-content: center; padding: 10px 0 4px; }
+.dot {
+  width: 6px; height: 6px; border-radius: 50%;
+  background: rgba(201,146,42,0.2);
+  transition: background 0.3s, transform 0.3s;
+}
+.dot.active { background: var(--gold); transform: scale(1.35); }
+</style>
+</head>
+<body>
+
+<div class="dust" id="dust"></div>
+
+<div class="app">
+
+  <div class="book-shell">
+    <div class="spine"><span class="spine-text">Géneros · Maia</span></div>
+
+    <div class="slides" id="slides">
+
+      <!-- Slide 0: Portada -->
+      <div class="slide slide-cover active" id="s0">
+        <div class="c-frame"></div>
+        <div class="corner tl"></div><div class="corner tr"></div>
+        <div class="corner bl"></div><div class="corner br"></div>
+        <div class="c-emblem">📜</div>
+        <div class="c-title">Géneros<br>Teatrales</div>
+        <div class="c-div"></div>
+        <div class="c-sub">Formas del Teatro</div>
+        <div class="c-hint">Desliza para comenzar</div>
+        <div class="c-author">Maia · Arte Escénico</div>
+      </div>
+
+      <!-- Slide 1: Formas Mayores -->
+      <div class="slide" id="s1">
+        <div class="slide-page">
+          <div class="page-header">
+            <span class="page-icon">🏛️</span>
+            <div>
+              <div class="page-title">Formas Mayores</div>
+              <div class="page-subtitle">Los grandes géneros dramáticos</div>
+            </div>
+          </div>
+          <div class="page-body">
+            <p>Las <strong>formas mayores</strong> son géneros de mayor extensión y complejidad, destinados a explorar conflictos humanos de gran envergadura.</p>
+            <div class="section-label">Géneros principales</div>
+            <div class="grid2">
+              <div class="card"><div class="card-name">Tragedia</div><div class="card-desc">Conflicto fatal del héroe con el destino</div></div>
+              <div class="card"><div class="card-name">Comedia</div><div class="card-desc">Final feliz, retrato de costumbres</div></div>
+              <div class="card"><div class="card-name">Drama</div><div class="card-desc">Mezcla trágica y cómica, realista</div></div>
+              <div class="card"><div class="card-name">Tragicomedia</div><div class="card-desc">Fusión de ambos géneros</div></div>
+            </div>
+            <div class="section-label">Características</div>
+            <div class="tags">
+              <span class="tag">Varios actos</span>
+              <span class="tag">Conflicto central</span>
+              <span class="tag">Lenguaje elevado</span>
+              <span class="tag">Temática universal</span>
+            </div>
+            <div class="section-label">Obras de referencia</div>
+            <p><strong>Edipo Rey</strong> · <strong>Hamlet</strong> · <strong>La vida es sueño</strong> · <strong>Casa de Muñecas</strong></p>
+          </div>
+          <span class="pg-num">1</span>
+        </div>
+      </div>
+
+      <!-- Slide 2: Formas Menores -->
+      <div class="slide" id="s2">
+        <div class="slide-page">
+          <div class="page-header">
+            <span class="page-icon">🌿</span>
+            <div>
+              <div class="page-title">Formas Menores</div>
+              <div class="page-subtitle">Géneros teatrales de extensión breve</div>
+            </div>
+          </div>
+          <div class="page-body">
+            <p>Las <strong>formas menores</strong> son géneros de menor extensión, pensados para el entretenimiento popular y de fácil representación.</p>
+            <div class="section-label">Géneros que incluye</div>
+            <div class="grid2">
+              <div class="card"><div class="card-name">Entremés</div><div class="card-desc">Pieza cómica entre actos</div></div>
+              <div class="card"><div class="card-name">Sainete</div><div class="card-desc">Cuadro de costumbres populares</div></div>
+              <div class="card"><div class="card-name">Farsa</div><div class="card-desc">Comedia exagerada y burlesca</div></div>
+              <div class="card"><div class="card-name">Monólogo</div><div class="card-desc">Un solo personaje en escena</div></div>
+            </div>
+            <div class="section-label">Rasgos comunes</div>
+            <div class="tags">
+              <span class="tag">Brevedad</span>
+              <span class="tag">Humor popular</span>
+              <span class="tag">Crítica social</span>
+              <span class="tag">Pocos personajes</span>
+            </div>
+            <div class="quote">"Las formas menores son el pulso cotidiano del teatro: rápidas, vitales, cercanas al pueblo."</div>
+          </div>
+          <span class="pg-num">2</span>
+        </div>
+      </div>
+
+      <!-- Slide 3: Entremés -->
+      <div class="slide" id="s3">
+        <div class="slide-page">
+          <div class="page-header">
+            <span class="page-icon">🎭</span>
+            <div>
+              <div class="page-title">Entremés</div>
+              <div class="page-subtitle">Pieza cómica breve intercalada</div>
+            </div>
+          </div>
+          <div class="page-body">
+            <p>El <strong>entremés</strong> es una obra corta y cómica representada entre los actos de comedias o autos sacramentales en los siglos XVI y XVII.</p>
+            <div class="section-label">Características</div>
+            <div class="tags">
+              <span class="tag">Duración breve</span>
+              <span class="tag">Tono cómico</span>
+              <span class="tag">Lenguaje coloquial</span>
+              <span class="tag">Un solo acto</span>
+              <span class="tag">Crítica social</span>
+            </div>
+            <div class="section-label">Función</div>
+            <p>Servía de <strong>entretenimiento y descanso</strong> entre actos. Retrataba tipos populares con humor e ironía social.</p>
+            <div class="quote">"El entremés era el espejo burlón del pueblo, donde los humildes reían de sus propias miserias."</div>
+            <div class="section-label">Representantes</div>
+            <div class="grid2">
+              <div class="card"><div class="card-name">Cervantes</div><div class="card-desc">El retablo de las maravillas</div></div>
+              <div class="card"><div class="card-name">Lope de Rueda</div><div class="card-desc">Precursor del género</div></div>
+            </div>
+          </div>
+          <span class="pg-num">3</span>
+        </div>
+      </div>
+
+    </div><!-- /slides -->
+  </div><!-- /book-shell -->
+
+  <div class="dots" id="dots">
+    <div class="dot active"></div>
+    <div class="dot"></div>
+    <div class="dot"></div>
+    <div class="dot"></div>
+  </div>
+
+  <div class="controls">
+    <button class="btn" id="prevBtn" disabled>← Atrás</button>
+    <span class="indicator" id="indicator">Portada</span>
+    <button class="btn" id="nextBtn">Siguiente →</button>
+  </div>
+
+</div>
+
+<script>
+// Dust
+const dustEl = document.getElementById('dust');
+for (let i = 0; i < 16; i++) {
+  const s = document.createElement('span');
+  s.style.cssText = `left:${Math.random()*100}%;--d:${7+Math.random()*9}s;--dl:${Math.random()*8}s;--x:${(Math.random()-.5)*60}px`;
+  dustEl.appendChild(s);
+}
+
+const total = 4;
+const labels = ['Portada', 'Formas Mayores', 'Formas Menores', 'Entremés'];
+let cur = 0;
+
+const allSlides = document.querySelectorAll('.slide');
+const allDots   = document.querySelectorAll('.dot');
+const prevBtn   = document.getElementById('prevBtn');
+const nextBtn   = document.getElementById('nextBtn');
+const indicator = document.getElementById('indicator');
+
+function goTo(next) {
+  if (next < 0 || next >= total) return;
+  // Mark old as prev
+  allSlides[cur].classList.remove('active');
+  allSlides[cur].classList.add('prev');
+  setTimeout(() => allSlides[cur].classList.remove('prev'), 600);
+
+  cur = next;
+  allSlides[cur].classList.add('active');
+
+  allDots.forEach((d, i) => d.classList.toggle('active', i === cur));
+  indicator.textContent = labels[cur];
+  prevBtn.disabled = cur === 0;
+  nextBtn.disabled = cur === total - 1;
+}
+
+prevBtn.addEventListener('click', () => goTo(cur - 1));
+nextBtn.addEventListener('click', () => goTo(cur + 1));
+
+// Touch swipe
+let tx = 0;
+document.addEventListener('touchstart', e => { tx = e.touches[0].clientX; }, { passive: true });
+document.addEventListener('touchend', e => {
+  const dx = e.changedTouches[0].clientX - tx;
+  if (Math.abs(dx) < 40) return;
+  if (dx < 0) goTo(cur + 1);
+  else goTo(cur - 1);
+}, { passive: true });
+</script>
+</body>
+</html>
